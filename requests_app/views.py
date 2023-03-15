@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from .models import User, Program, Approver, Request, Member, MemberType
 from .serializers import UserSerializer, ProgramSerializer, ApproverSerializer, RequestSerializer, MemberSerializer, MemberTypeSerializer
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -93,10 +95,23 @@ def add_member(request, program_id):
     return HttpResponseRedirect(reverse_lazy('program_edit', args=[program.id]))
 
 
-class ProgramEdit(UpdateView):
+class ProgramEdit(LoginRequiredMixin, UpdateView):
     model = Program
     fields = ['name']
     template_name = 'program_edit.html'
+    
+    def post(self, request, *args, **kwargs):
+        if "add_member" in request.POST:
+            self.object = self.get_object()
+            member_form = MemberForm(request.POST, prefix='member')
+            if member_form.is_valid():
+                member = member_form.save(commit=False)
+                member.program = self.object
+                member.save()
+                return redirect(reverse('program_edit', kwargs={'pk': self.object.pk}))  # Change this line
+            else:
+                return self.form_invalid(member_form)
+        return super().post(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -107,6 +122,13 @@ class ProgramEdit(UpdateView):
         context['members_and_forms'] = members_and_forms
         context['add_member_form'] = AddMemberForm()
         return context
+    
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.request.is_ajax():
+            return JsonResponse(form.errors, status=400)
+        else:
+            return response
 
     def get_success_url(self):
         return reverse('program_detail', kwargs={'program_id': self.object.pk})
