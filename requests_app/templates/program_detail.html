@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% load requests_app_extras %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">{{ object.name }}</h1>
+
+<div class="mb-4">
+    <a href="{% url 'program_edit' pk=object.pk %}" class="bg-blue-500 text-white px-4 py-2">Edit Program</a>
+</div>
+
+<h2 class="text-xl font-bold mb-4">Requests</h2>
+
+{% for status in ''|get_request_status_list %}
+<h3 class="text-lg font-bold mb-4">{{ status|title }}</h3>
+<ul>
+    {% for request in object.request_set.all %}
+    {% if request.status == status %}
+    <li>{{ request.request_type }} - {{ request.description }}</li>
+    {% endif %}
+    {% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}

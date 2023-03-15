@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold mb-4">Program List</h1>
+    <ul>
+        {% for program in programs %}
+            <li class="mb-2">
+                <a href="{% url 'program_detail' program.id %}" class="text-blue-500 hover:underline">{{ program.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

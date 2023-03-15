@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Django Approval Project{% endblock %}</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="bg-blue-500 p-4">
+      <a href="{% url 'home' %}" class="text-white mr-4">Home</a>
+      {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="text-white mr-4">Dashboard</a>
+      <a href="{% url 'logout' %}" class="text-white mr-4">Logout</a>
+      {% else %}
+      <a href="{% url 'login' %}" class="text-white mr-4">Login</a>
+      {% endif %}
+    </nav>
+    <main class="container mx-auto p-6">{% block content %}{% endblock %}</main>
+  </body>
+</html>
