@@ -6,8 +6,18 @@
 <h1 class="text-2xl font-bold mb-4">{{ object.name }}</h1>
 
 <div class="mb-4">
-    <a href="{% url 'program_edit' pk=object.pk %}" class="bg-blue-500 text-white px-4 py-2">Edit Program</a>
+    <a href="{% url 'program_edit' pk=program.id %}" class="bg-blue-500 text-white px-4 py-2">Edit Program</a>
 </div>
+
+<h2 class="text-xl font-bold mb-4">Members</h2>
+<ul>
+    {% for member in members %}
+        <li>{{ member.user }} - {{ member.member_type.type_name }}</li>
+    {% empty %}
+        <li>No members found.</li>
+    {% endfor %}
+</ul>
+
 
 <h2 class="text-xl font-bold mb-4">Requests</h2>
 

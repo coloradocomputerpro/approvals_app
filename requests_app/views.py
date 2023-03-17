@@ -73,7 +73,9 @@ def program_list(request):
 
 def program_detail(request, program_id):
     program = get_object_or_404(Program, pk=program_id)
-    return render(request, 'program_detail.html', {'object': program})
+    members = Member.objects.filter(program=program)
+    context = {'program': program, 'members': members}
+    return render(request, 'program_detail.html', context)
 
 def add_member(request, program_id):
     program = get_object_or_404(Program, pk=program_id)
