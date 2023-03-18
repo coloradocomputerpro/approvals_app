@@ -35,15 +35,49 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="add_member")
     def add_member(self, request, pk=None):
-        # Your logic to add a member to the program goes here.
-        # You can access the program id with the `pk` variable and the user id and member type from the POST data.
-        pass
+        program = self.get_object()
+        user_id = request.data.get("user_id")
+        member_type = request.data.get("member_type")
+
+        if user_id is not None and member_type is not None:
+            user = User.objects.get(pk=user_id)
+            member_type_instance = MemberType.objects.get(type_name=member_type)
+
+            member = Member(
+                user=user, program=program, member_type=member_type_instance
+            )
+            member.save()
+            return Response(
+                {"message": "Member added successfully."},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {"error": "Invalid data provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=["post"], url_path="remove_member")
     def remove_member(self, request, pk=None):
         # Your logic to remove a member from the program goes here.
         # You can access the program id with the `pk` variable and the user id from the POST data.
         pass
+
+    @action(detail=True, methods=["get"], url_path="non_members")
+    def non_members(self, request, pk=None):
+        program = self.get_object()
+        members = program.member_set.all().values_list("user", flat=True)
+        non_members = User.objects.exclude(pk__in=members)
+
+        non_members_data = []
+        for user in non_members:
+            non_members_data.append(
+                {
+                    "id": user.id,
+                    "username": user.username,
+                }
+            )
+
+        return Response(non_members_data)
 
 
 class ApproverViewSet(viewsets.ModelViewSet):

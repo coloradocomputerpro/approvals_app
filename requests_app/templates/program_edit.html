@@ -1,37 +1,110 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 class="text-3xl font-bold mb-4">Edit Program</h1>
+<div x-data="programEdit()" class="container mx-auto my-4">
+  <h1 class="text-3xl font-bold mb-4">Edit Program</h1>
 
-<h2 class="text-2xl font-bold mt-8 mb-4">Edit Program Details</h2>
-<form method="post">
+  <h2 class="text-2xl font-bold mt-8 mb-4">Edit Program Details</h2>
+  <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
     <a href="{% url 'program_detail' program.id %}" class="text-blue-500 hover:underline">Cancel</a>
-</form>
+  </form>
 
-<h2 class="text-2xl font-bold mt-8 mb-4">Members</h2>
-<ul>
+  <h2 class="text-2xl font-bold mt-8 mb-4">Members</h2>
+  <ul>
     {% for member, member_form in members_and_forms %}
     <li class="mb-2">
-        {{ member.user.username }} ({{ member.member_type.type_name }})
-        <form method="post" action="{% url 'edit_member' member.id %}" class="inline">
-            {% csrf_token %}
-            {{ member_form }}
-            <button type="submit" class="bg-blue-500 text-white px-2 py-1">Change</button>
-        </form>
-        <form method="post" action="{% url 'remove_member' member.id %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="bg-red-500 text-white px-2 py-1">Remove</button>
-        </form>
+      {{ member.user.username }} ({{ member.member_type.type_name }})
+      <form method="post" action="{% url 'edit_member' member.id %}" class="inline">
+        {% csrf_token %}
+        {{ member_form }}
+        <button type="submit" class="bg-blue-500 text-white px-2 py-1">Change</button>
+      </form>
+      <form method="post" action="{% url 'remove_member' member.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-500 text-white px-2 py-1">Remove</button>
+      </form>
     </li>
     {% endfor %}
-</ul>
+  </ul>
 
-<h2 class="text-2xl font-bold mt-8 mb-4">Add Member</h2>
+  <!-- Add Member button -->
+  <button @click="openAddMemberModal()" class="bg-blue-500 text-white px-4 py-2">Add Member</button>
 
-<button type="button" class="bg-blue-500 text-white px-4 py-2">Add Member</button>
+  <!-- Add Member Modal -->
+  <div x-show="showModal" x-ref="addMemberModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black bg-opacity-50">
+    <div class="bg-white rounded shadow-lg w-3/4">
+      <div class="p-6">
+        <h2 class="text-lg font-bold mb-4">Add Member</h2>
+        <div class="space-y-4">
+          <template x-for="user in nonMembers">
+            <div class="flex items-center space-x-4">
+              <span x-text="user.username"></span>
+              <button @click="toggleMember(user.id)" x-text="addedMembers[user.id] ? 'Remove' : 'Add'"
+                class="bg-blue-500 text-white px-4 py-2"></button>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="flex justify-end p-6 space-x-4">
+        <button @click="submitAddMembers()" class="bg-green-500 text-white px-4 py-2">Save</button>
+        <button @click="closeAddMemberModal()" class="bg-red-500 text-white px-4 py-2">Cancel</button>
+      </div>
+    </div>
+  </div>
 
+  <script>
+    function programEdit() {
+      return {
+        programId: "{{ object.pk }}",
+        csrfToken: "{{ csrf_token }}",
+        addedMembers: {},
+        nonMembers: [],
+        showModal: false,
+        async fetchNonMembers() {
+          const response = await fetch(`/api/programs/${this.programId}/non_members/`);
+          const data = await response.json();
+          this.nonMembers = data;
+        },
+        openAddMemberModal() {
+          this.fetchNonMembers();
+          this.showModal = true;
+        },
+        closeAddMemberModal() {
+          this.showModal = false;
+        },
+        toggleMember(userId) {
+          if (this.addedMembers[userId]) {
+            delete this.addedMembers[userId];
+          } else {
+            this.addedMembers[userId] = true;
+          }
+        },
+        async submitAddMembers() {
+          for (const userId in this.addedMembers) {
+            if (this.addedMembers.hasOwnProperty(userId)) {
+              const url = `/api/programs/${this.programId}/add_member/`;
+              const body = {
+                user: userId
+              };
 
+              await fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-CSRFToken": this.csrfToken
+                },
+                body: JSON.stringify(body)
+              });
+            }
+          }
+          location.reload();
+        },
+      };
+    }
+  </script>
+</div>
 {% endblock %}
