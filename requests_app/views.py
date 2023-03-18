@@ -1,11 +1,19 @@
 from rest_framework import viewsets
 from .models import User, Program, Approver, Request, Member, MemberType
-from .serializers import UserSerializer, ProgramSerializer, ApproverSerializer, RequestSerializer, MemberSerializer, MemberTypeSerializer
+from .serializers import (
+    UserSerializer,
+    ProgramSerializer,
+    ApproverSerializer,
+    RequestSerializer,
+    MemberSerializer,
+    MemberTypeSerializer,
+)
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import render, get_object_or_404
 from django.views.generic.edit import UpdateView, CreateView
@@ -16,23 +24,37 @@ from .forms import AddMemberForm, EditMemberForm
 from django.views.generic.list import ListView
 
 
-
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
 
 class ProgramViewSet(viewsets.ModelViewSet):
     queryset = Program.objects.all()
     serializer_class = ProgramSerializer
 
+    @action(detail=True, methods=["post"], url_path="add_member")
+    def add_member(self, request, pk=None):
+        # Your logic to add a member to the program goes here.
+        # You can access the program id with the `pk` variable and the user id and member type from the POST data.
+        pass
+
+    @action(detail=True, methods=["post"], url_path="remove_member")
+    def remove_member(self, request, pk=None):
+        # Your logic to remove a member from the program goes here.
+        # You can access the program id with the `pk` variable and the user id from the POST data.
+        pass
+
+
 class ApproverViewSet(viewsets.ModelViewSet):
     queryset = Approver.objects.all()
     serializer_class = ApproverSerializer
 
+
 class RequestViewSet(viewsets.ModelViewSet):
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
-    #permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         user = request.user
@@ -44,46 +66,57 @@ class RequestViewSet(viewsets.ModelViewSet):
         if is_member:
             return super().create(request, *args, **kwargs)
         else:
-            return Response({"detail": "User is not a member of the program"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "User is not a member of the program"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
 
 class MemberTypeViewSet(viewsets.ModelViewSet):
     queryset = MemberType.objects.all()
     serializer_class = MemberTypeSerializer
 
+
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
+
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import render
 
+
 def home(request):
-    return render(request, 'home.html')
+    return render(request, "home.html")
+
 
 class CustomLoginView(LoginView):
-    template_name = 'login.html'
+    template_name = "login.html"
+
 
 class CustomLogoutView(LogoutView):
-    next_page = 'home'
+    next_page = "home"
+
 
 def program_list(request):
     programs = Program.objects.all()
-    return render(request, 'program_list.html', {'programs': programs})
+    return render(request, "program_list.html", {"programs": programs})
+
 
 def program_detail(request, program_id):
     program = get_object_or_404(Program, pk=program_id)
     members = Member.objects.filter(program=program)
-    context = {'program': program, 'members': members}
-    return render(request, 'program_detail.html', context)
+    context = {"program": program, "members": members}
+    return render(request, "program_detail.html", context)
+
 
 def add_member(request, program_id):
     program = get_object_or_404(Program, pk=program_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AddMemberForm(request.POST)
         if form.is_valid():
-            user = form.cleaned_data['user']
-            member_type = form.cleaned_data['member_type']
+            user = form.cleaned_data["user"]
+            member_type = form.cleaned_data["member_type"]
 
             # Check if the user is already a member of the program
             existing_member = Member.objects.filter(user=user, program=program).first()
@@ -91,26 +124,28 @@ def add_member(request, program_id):
                 member = Member(user=user, member_type=member_type, program=program)
                 member.save()
             else:
-                messages.error(request, 'The user is already a member of this program.')
+                messages.error(request, "The user is already a member of this program.")
 
-            return HttpResponseRedirect(reverse_lazy('program_edit', args=[program.id]))
-    return HttpResponseRedirect(reverse_lazy('program_edit', args=[program.id]))
+            return HttpResponseRedirect(reverse_lazy("program_edit", args=[program.id]))
+    return HttpResponseRedirect(reverse_lazy("program_edit", args=[program.id]))
 
 
 class ProgramEdit(LoginRequiredMixin, UpdateView):
     model = Program
-    fields = ['name']
-    template_name = 'program_edit.html'
-    
+    fields = ["name"]
+    template_name = "program_edit.html"
+
     def post(self, request, *args, **kwargs):
         if "add_member" in request.POST:
             self.object = self.get_object()
-            member_form = MemberForm(request.POST, prefix='member')
+            member_form = MemberForm(request.POST, prefix="member")
             if member_form.is_valid():
                 member = member_form.save(commit=False)
                 member.program = self.object
                 member.save()
-                return redirect(reverse('program_edit', kwargs={'pk': self.object.pk}))  # Change this line
+                return redirect(
+                    reverse("program_edit", kwargs={"pk": self.object.pk})
+                )  # Change this line
             else:
                 return self.form_invalid(member_form)
         return super().post(request, *args, **kwargs)
@@ -121,13 +156,13 @@ class ProgramEdit(LoginRequiredMixin, UpdateView):
             (member, EditMemberForm(instance=member))
             for member in self.object.member_set.all()
         ]
-        context['members_and_forms'] = members_and_forms
+        context["members_and_forms"] = members_and_forms
         context["member_types"] = MemberType.objects.all()
-        context["user_list"] = self.request.session.get('user_list', [])
-        context['user_list'] = User.objects.all()
-        context['add_member_form'] = AddMemberForm()
+        context["user_list"] = self.request.session.get("user_list", [])
+        context["user_list"] = User.objects.all()
+        context["add_member_form"] = AddMemberForm()
         return context
-    
+
     def form_invalid(self, form):
         response = super().form_invalid(form)
         if self.request.is_ajax():
@@ -136,56 +171,66 @@ class ProgramEdit(LoginRequiredMixin, UpdateView):
             return response
 
     def get_success_url(self):
-        return reverse('program_detail', kwargs={'program_id': self.object.pk})
-    
+        return reverse("program_detail", kwargs={"program_id": self.object.pk})
+
+
 def edit_member(request, member_id):
     member = get_object_or_404(Member, pk=member_id)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = EditMemberForm(request.POST, instance=member)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(reverse_lazy('program_edit', args=[member.program.id]))
-    return HttpResponseRedirect(reverse_lazy('program_edit', args=[member.program.id]))
+            return HttpResponseRedirect(
+                reverse_lazy("program_edit", args=[member.program.id])
+            )
+    return HttpResponseRedirect(reverse_lazy("program_edit", args=[member.program.id]))
+
 
 def remove_member(request, member_id):
     member = get_object_or_404(Member, pk=member_id)
     program_id = member.program.id
     member.delete()
-    return HttpResponseRedirect(reverse_lazy('program_edit', args=[program_id]))
+    return HttpResponseRedirect(reverse_lazy("program_edit", args=[program_id]))
+
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+
 class DashboardView(LoginRequiredMixin, ListView):
     model = Program
-    template_name = 'dashboard.html'
-    context_object_name = 'programs'
+    template_name = "dashboard.html"
+    context_object_name = "programs"
 
     def get_queryset(self):
         return Program.objects.filter(member__user=self.request.user).distinct()
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         if self.object_list.count() == 1:
             program = self.object_list.first()
-            context['object'] = program
-            context['members'] = program.member_set.all()
-            context['pending_requests'] = program.request_set.filter(status='pending')
-            context['approved_requests'] = program.request_set.filter(status='approved')
-            context['rejected_requests'] = program.request_set.filter(status='rejected')
-            context['info_required_requests'] = program.request_set.filter(status='info_required')
+            context["object"] = program
+            context["members"] = program.member_set.all()
+            context["pending_requests"] = program.request_set.filter(status="pending")
+            context["approved_requests"] = program.request_set.filter(status="approved")
+            context["rejected_requests"] = program.request_set.filter(status="rejected")
+            context["info_required_requests"] = program.request_set.filter(
+                status="info_required"
+            )
 
         return context
 
-    
+
 class RequestCreate(LoginRequiredMixin, CreateView):
     model = Request
-    fields = ['request_type', 'program', 'description', 'attachments']
-    template_name = 'request_create.html'
-    
+    fields = ["request_type", "program", "description", "attachments"]
+    template_name = "request_create.html"
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['program'].queryset = Program.objects.filter(member__user=self.request.user).distinct()
+        form.fields["program"].queryset = Program.objects.filter(
+            member__user=self.request.user
+        ).distinct()
         return form
 
     def form_valid(self, form):
@@ -193,4 +238,4 @@ class RequestCreate(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('dashboard')
+        return reverse_lazy("dashboard")

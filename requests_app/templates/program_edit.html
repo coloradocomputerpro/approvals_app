@@ -5,28 +5,28 @@
 
 <h2 class="text-2xl font-bold mt-8 mb-4">Edit Program Details</h2>
 <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
-    <a href="{% url 'program_detail' program.id %}" class="text-blue-500 hover:underline">Cancel</a>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="bg-blue-500 text-white px-4 py-2">Save</button>
+  <a href="{% url 'program_detail' program.id %}" class="text-blue-500 hover:underline">Cancel</a>
 </form>
 
 <h2 class="text-2xl font-bold mt-8 mb-4">Members</h2>
 <ul>
-    {% for member, member_form in members_and_forms %}
-    <li class="mb-2">
-        {{ member.user.username }} ({{ member.member_type.type_name }})
-        <form method="post" action="{% url 'edit_member' member.id %}" class="inline">
-            {% csrf_token %}
-            {{ member_form }}
-            <button type="submit" class="bg-blue-500 text-white px-2 py-1">Change</button>
-        </form>
-        <form method="post" action="{% url 'remove_member' member.id %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="bg-red-500 text-white px-2 py-1">Remove</button>
-        </form>
-    </li>
-    {% endfor %}
+  {% for member, member_form in members_and_forms %}
+  <li class="mb-2">
+    {{ member.user.username }} ({{ member.member_type.type_name }})
+    <form method="post" action="{% url 'edit_member' member.id %}" class="inline">
+      {% csrf_token %}
+      {{ member_form }}
+      <button type="submit" class="bg-blue-500 text-white px-2 py-1">Change</button>
+    </form>
+    <form method="post" action="{% url 'remove_member' member.id %}" class="inline">
+      {% csrf_token %}
+      <button type="submit" class="bg-red-500 text-white px-2 py-1">Remove</button>
+    </form>
+  </li>
+  {% endfor %}
 </ul>
 
 <h2 class="text-2xl font-bold mt-8 mb-4">Add Member</h2>
@@ -48,110 +48,112 @@
       </thead>
       <tbody id="add-member-table">
         {% for user in user_list %}
-          <tr>
-            <td>{{ user.username }}</td>
-            <td>
-              <div class="relative inline-flex">
-                <select class="member-type-dropdown w-full rounded border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
-                  {% for member_type in member_types %}
-                    <option value="{{ member_type.pk }}">{{ member_type.type_name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </td>
-            <td>
-              <button class="button bg-blue-500 text-white px-4 py-2 add-member-btn" data-user-id="{{ user.pk }}">Add</button>
-            </td>
-          </tr>
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>
+            <div class="relative inline-flex">
+              <select
+                class="member-type-dropdown w-full rounded border-gray-300 text-gray-600 focus:outline-none focus:border-blue-500">
+                {% for member_type in member_types %}
+                <option value="{{ member_type.pk }}">{{ member_type.type_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </td>
+          <td>
+            <button class="button bg-blue-500 text-white px-4 py-2 add-member-btn"
+              data-user-id="{{ user.pk }}">Add</button>
+          </td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
     <div class="flex justify-end mt-4">
       <button type="button" class="bg-blue-500 text-white px-4 py-2" onclick="submitAddMembers();">OK</button>
-      <button type="button" class="bg-red-500 text-white px-4 py-2 ml-2" onclick="closeAddMemberModal();">Cancel</button>
+      <button type="button" class="bg-red-500 text-white px-4 py-2 ml-2"
+        onclick="closeAddMemberModal();">Cancel</button>
     </div>
   </div>
 </div>
 
-
-
 <script>
-    function openAddMemberModal() {
-        document.getElementById("addMemberModal").classList.remove("hidden");
-    }
+  function openAddMemberModal() {
+    document.getElementById("addMemberModal").classList.remove("hidden");
+    addedMembers = new Set();
+    removedMembers = new Set();
+  }
 
-    function closeAddMemberModal() {
-        document.getElementById("addMemberModal").classList.add("hidden");
-    }
+  function closeAddMemberModal() {
+    document.getElementById("addMemberModal").classList.add("hidden");
+  }
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  // ... existing code
+  document.addEventListener("DOMContentLoaded", () => {
 
-  const addedMembers = new Set();
-  const removedMembers = new Set();
+    let addedMembers = new Set();
+    let removedMembers = new Set();
 
-  const addMemberTable = document.getElementById("add-member-table");
+    const addMemberTable = document.getElementById("add-member-table");
 
-  addMemberTable.addEventListener("click", (event) => {
-    if (event.target.classList.contains("add-member-btn")) {
-      const button = event.target;
-      const userId = button.dataset.userId;
+    addMemberTable.addEventListener("click", (event) => {
+      if (event.target.classList.contains("add-member-btn")) {
+        const button = event.target;
+        const userId = button.dataset.userId;
 
-      if (button.textContent === "Add") {
-        button.textContent = "Remove";
-        button.classList.remove("bg-blue-500");
-        button.classList.add("bg-red-500");
-        addedMembers.add(userId);
-        removedMembers.delete(userId);
-      } else {
-        button.textContent = "Add";
-        button.classList.remove("bg-red-500");
-        button.classList.add("bg-blue-500");
-        addedMembers.delete(userId);
-        removedMembers.add(userId);
+        if (button.textContent === "Add") {
+          button.textContent = "Remove";
+          button.classList.remove("bg-blue-500");
+          button.classList.add("bg-red-500");
+          addedMembers.add(userId);
+          removedMembers.delete(userId);
+        } else {
+          button.textContent = "Add";
+          button.classList.remove("bg-red-500");
+          button.classList.add("bg-blue-500");
+          addedMembers.delete(userId);
+          removedMembers.add(userId);
+        }
       }
-    }
+    });
   });
-});
 
-async function submitAddMembers() {
-  // Get the CSRF token from the CSRF cookie
-  const csrfToken = document.cookie.split("; ").find((cookie) => cookie.startsWith("csrftoken=")).split("=")[1];
+  async function submitAddMembers() {
+    // Get the CSRF token from the CSRF cookie
+    const csrfToken = document.cookie.split("; ").find((cookie) => cookie.startsWith("csrftoken=")).split("=")[1];
+    console.log(csrfToken)
+    // Iterate through addedMembers and send POST requests to add_member endpoint
+    for (const userId of addedMembers) {
+      const memberTypeId = document.querySelector(`[data-user-id="${userId}"]`).parentElement.previousElementSibling.querySelector(".member-type-dropdown").value;
+      await fetch(`/api/programs/${programId}/add_member/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+          user: userId,
+          member_type: memberTypeId,
+        }),
+      });
+    }
 
-  // Iterate through addedMembers and send POST requests to add_member endpoint
-  for (const userId of addedMembers) {
-    const memberTypeId = document.querySelector(`[data-user-id="${userId}"]`).parentElement.previousElementSibling.querySelector(".member-type-dropdown").value;
-    await fetch(`/api/programs/${programId}/add_member/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      body: JSON.stringify({
-        user: userId,
-        member_type: memberTypeId,
-      }),
-    });
+    // Iterate through removedMembers and send POST requests to remove_member endpoint
+    for (const userId of removedMembers) {
+      await fetch(`/api/programs/${programId}/remove_member/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        body: JSON.stringify({
+          user: userId,
+        }),
+      });
+    }
+
+    // Close the add member modal and reload the page to reflect the changes
+    closeAddMemberModal();
+    // location.reload();
   }
-
-  // Iterate through removedMembers and send POST requests to remove_member endpoint
-  for (const userId of removedMembers) {
-    await fetch(`/api/programs/${programId}/remove_member/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": csrfToken,
-      },
-      body: JSON.stringify({
-        user: userId,
-      }),
-    });
-  }
-
-  // Close the add member modal and reload the page to reflect the changes
-  closeAddMemberModal();
-  location.reload();
-}
 </script>
 {% endblock %}
