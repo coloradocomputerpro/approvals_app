@@ -43,8 +43,16 @@
           <template x-for="user in nonMembers">
             <div class="flex items-center space-x-4">
               <span x-text="user.username"></span>
-              <button @click="toggleMember(user.id)" x-text="addedMembers[user.id] ? 'Remove' : 'Add'"
+              <select>
+                <option value="" selected>Select Member Type</option>
+                {% for member_type in member_types %}
+                <option value="{{ member_type.pk }}">{{ member_type.type_name }}</option>
+                {% endfor %}
+              </select>
+              <button @click="toggleMember(user.id, $event)" x-text="addedMembers[user.id] ? 'Remove' : 'Add'"
                 class="bg-blue-500 text-white px-4 py-2"></button>
+
+
             </div>
           </template>
         </div>
@@ -76,19 +84,24 @@
         closeAddMemberModal() {
           this.showModal = false;
         },
-        toggleMember(userId) {
+        toggleMember(userId, event) {
+          const memberTypeSelect = event.target.previousElementSibling;
+          const member_type = memberTypeSelect.value;
+
           if (this.addedMembers[userId]) {
             delete this.addedMembers[userId];
           } else {
-            this.addedMembers[userId] = true;
+            this.addedMembers[userId] = member_type;
           }
         },
         async submitAddMembers() {
           for (const userId in this.addedMembers) {
             if (this.addedMembers.hasOwnProperty(userId)) {
+              const member_type = this.addedMembers[userId];
               const url = `/api/programs/${this.programId}/add_member/`;
               const body = {
-                user: userId
+                user_id: userId,
+                member_type: member_type,
               };
 
               await fetch(url, {

@@ -38,10 +38,12 @@ class ProgramViewSet(viewsets.ModelViewSet):
         program = self.get_object()
         user_id = request.data.get("user_id")
         member_type = request.data.get("member_type")
+        print(user_id)
+        print(member_type)
 
         if user_id is not None and member_type is not None:
             user = User.objects.get(pk=user_id)
-            member_type_instance = MemberType.objects.get(type_name=member_type)
+            member_type_instance = MemberType.objects.get(pk=member_type)
 
             member = Member(
                 user=user, program=program, member_type=member_type_instance
