@@ -68,7 +68,7 @@ class ProgramViewSet(viewsets.ModelViewSet):
     def non_members(self, request, pk=None):
         program = self.get_object()
         members = program.member_set.all().values_list("user", flat=True)
-        non_members = User.objects.exclude(pk__in=members)
+        non_members = User.objects.exclude(pk__in=members).exclude(is_staff=True).exclude(is_superuser=True)
 
         non_members_data = []
         for user in non_members:
