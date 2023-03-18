@@ -122,6 +122,8 @@ class ProgramEdit(LoginRequiredMixin, UpdateView):
             for member in self.object.member_set.all()
         ]
         context['members_and_forms'] = members_and_forms
+        context["member_types"] = MemberType.objects.all()
+        context["user_list"] = self.request.session.get('user_list', [])
         context['add_member_form'] = AddMemberForm()
         return context
     
